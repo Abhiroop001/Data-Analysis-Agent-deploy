@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from redis import Redis
+from redis import from_url
 from rq import Queue
 import uuid
 import os
@@ -9,10 +9,9 @@ from app.worker import run_eda_job
 
 app = FastAPI(title="Automated Data Science Agent")
 
-redis_conn = Redis(
-    host=os.environ.get("REDIS_HOST"),
-    port=int(os.environ.get("REDIS_PORT", 6379)),
-    password=os.environ.get("REDIS_PASSWORD"),
+# ✅ Correct Redis connection for Render
+redis_conn = from_url(
+    os.environ.get("REDIS_URL"),
     decode_responses=True
 )
 
@@ -20,6 +19,7 @@ queue = Queue(connection=redis_conn)
 
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 
 @app.post("/create-job")
 async def create_job(
@@ -47,6 +47,7 @@ async def create_job(
 
     return {"job_id": job_id}
 
+
 @app.get("/job-status/{job_id}")
 def job_status(job_id: str):
     result = redis_conn.get(job_id)
@@ -59,9 +60,11 @@ def job_status(job_id: str):
 
     return {"status": "running"}
 
+
 @app.get("/")
 def health():
     return {"status": "healthy"}
+
 
 if __name__ == "__main__":
     import uvicorn
