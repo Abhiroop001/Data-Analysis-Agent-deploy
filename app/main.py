@@ -8,8 +8,6 @@ import json
 from app.worker import run_eda_job
 
 app = FastAPI(title="Automated Data Science Agent")
-
-# ✅ Correct Redis connection for Render
 redis_conn = from_url(
     os.environ.get("REDIS_URL"),
     decode_responses=True
